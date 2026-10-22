@@ -17,9 +17,9 @@ TerrainGenerator::TerrainGenerator(std::uint32_t seed, size_t w, size_t h)
    mountain_warp_x_(util::generate_seed(seed, 5), 0.006f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    mountain_warp_y_(util::generate_seed(seed, 6), 0.006f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    coarse_temperature_noise_(util::generate_seed(seed, 7), 0.001f, FastNoiseLite::NoiseType::NoiseType_Perlin),
-   medium_temperature_noise_(util::generate_seed(seed, 7), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
-   coarse_humidity_noise_(util::generate_seed(seed, 8), 0.001f, FastNoiseLite::NoiseType::NoiseType_Perlin),
-   medium_humidity_noise_(util::generate_seed(seed, 7), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   medium_temperature_noise_(util::generate_seed(seed, 8), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   coarse_humidity_noise_(util::generate_seed(seed, 9), 0.001f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   medium_humidity_noise_(util::generate_seed(seed, 10), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    generated_map_(false),
    width_(w),
    height_(h) {}
@@ -50,48 +50,43 @@ TerrainGenerator::TerrainType_ TerrainGenerator::choose_biome_(float temperature
 }
 
 TerrainGenerator::TerrainType_ TerrainGenerator::sample_map(size_t x, size_t y) const {
-  float elevation = this->coarse_elevation_noise_.sample(x, y);
-  elevation += this->medium_elevation_noise_.sample(x, y) / 5.0f;
-  elevation += this->fine_elevation_noise_.sample(x, y) / 10.0f;
+  float elevation = coarse_elevation_noise_.sample(x, y);
+  elevation += medium_elevation_noise_.sample(x, y) / 5.0f;
+  elevation += fine_elevation_noise_.sample(x, y) / 10.0f;
 
-  float mountain_region = this->mountain_region_noise_.sample(x, y);
+  if (elevation >= 0.55f) {
+    const float mountain_region = mountain_region_noise_.sample(x, y);
 
-  float region_strength = std::clamp((mountain_region - 0.1f) / 0.6f, 0.0f, 1.0f);
+    if (mountain_region > 0.1f) {
+      const float warp_x = mountain_warp_x_.sample(x, y);
+      const float warp_y = mountain_warp_y_.sample(x, y);
 
-  float warp_x = this->mountain_warp_x_.sample(x, y);
-  float warp_y = this->mountain_warp_y_.sample(x, y);
+      const float ridge_x = static_cast<float>(x) + warp_x * 10.0f;
+      const float ridge_y = static_cast<float>(y) + warp_y * 10.0f;
 
-  float ridge_x = static_cast<float>(x) + warp_x * 10.0f;
-  float ridge_y = static_cast<float>(y) + warp_y * 10.0f;
+      const float ridge_noise = mountain_ridge_noise_.sample(ridge_x * 0.15f, ridge_y);
 
-  float ridge_noise = this->mountain_ridge_noise_.sample(ridge_x * 0.15f, ridge_y);
+      const float ridged = 1.0f - std::abs(ridge_noise);
 
-  float ridged = 1.0f - std::abs(ridge_noise);
+      if (ridged > 0.725f) {
+        return TerrainType_::MOUNTAIN;
+      }
+    }
+  }
 
-  ridged = std::clamp((ridged - 0.55f) / 0.35f, 0.0f, 1.0f);
+  if (elevation >= 0.2f) {
+    float temperature = coarse_temperature_noise_.sample(x, y);
+    temperature += medium_temperature_noise_.sample(x, y) / 5.0f;
 
-  bool is_mountain =
-      elevation >= 0.55f
-      && region_strength > 0.0f
-      && ridged > 0.5f;
-  
-  if (is_mountain) {
-    return TerrainType_::MOUNTAIN;
-
-  } else if (elevation >= 0.2f) {
-    float temperature = this->coarse_temperature_noise_.sample(x, y);
-    temperature += this->medium_temperature_noise_.sample(x, y) / 5.0f;
-
-    float humidity = this->coarse_humidity_noise_.sample(x, y);
-    humidity += this->medium_humidity_noise_.sample(x, y) / 5.0f;
+    float humidity = coarse_humidity_noise_.sample(x, y);
+    humidity += medium_humidity_noise_.sample(x, y) / 5.0f;
 
     return this->choose_biome_(temperature, humidity);
-
-  } else if (elevation >= -0.10f) {
-    return TerrainType_::WATER;
-  } else {
-    return TerrainType_::DEEP_WATER;
   }
+
+  return elevation >= -0.10f
+    ? TerrainType_::WATER
+    : TerrainType_::DEEP_WATER;
 }
 
 void TerrainGenerator::generate_map() {
@@ -108,25 +103,38 @@ void TerrainGenerator::generate_map() {
 }
 
 void TerrainGenerator::output_map(std::ostream &os) {
-  os << "P3\n";
+  os << "P6\n";
   os << this->width_ << " " << this->height_ << "\n";
   os << "255\n";
 
   if (!this->generated_map_) {
-    for (size_t y = 0; y < this->height_; ++y) {
-      for (size_t x = 0; x < this->width_; ++x) {
-        os << this->sample_map(x, y);
+    std::vector<char> row(width_ * 3);
+
+    for (std::size_t y = 0; y < this->height_; ++y) {
+      for (std::size_t x = 0; x < this->width_; ++x) {
+        const auto& color = COLOR_MAP_[static_cast<std::size_t>(this->sample_map(x, y))];
+
+        row[x * 3 + 0] = static_cast<char>(color.r);
+        row[x * 3 + 1] = static_cast<char>(color.g);
+        row[x * 3 + 2] = static_cast<char>(color.b);
       }
-      os << "\n";
+
+      os.write(row.data(), static_cast<std::streamsize>(row.size()));
     }
   } else {
-    for (size_t y = 0; y < this->height_; ++y) {
-      for (size_t x = 0; x < this->width_; ++x) {
-        size_t idx = y * this->width_ + x;
+    std::vector<char> row(width_ * 3);
 
-        os << this->map_[idx];
+    for (std::size_t y = 0; y < this->height_; ++y) {
+      for (std::size_t x = 0; x < this->width_; ++x) {
+        size_t idx = y * this->width_ + x;
+        const auto& color = COLOR_MAP_[static_cast<std::size_t>(this->map_[idx])];
+
+        row[x * 3 + 0] = static_cast<char>(color.r);
+        row[x * 3 + 1] = static_cast<char>(color.g);
+        row[x * 3 + 2] = static_cast<char>(color.b);
       }
-      os << "\n";
+
+      os.write(row.data(), static_cast<std::streamsize>(row.size()));
     }
   }
 }

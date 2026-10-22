@@ -1,5 +1,6 @@
 #include "TerrainGenerator.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <getopt.h>
@@ -53,6 +54,12 @@ int main(int argc, char **argv) {
   }
 
   TerrainGenerator tg(seed, width, height);
-  tg.generate_map();
+
+  const auto start = std::chrono::steady_clock::now();
   tg.output_map(std::cout);
+  const auto end = std::chrono::steady_clock::now();
+
+  const auto elapsed = std::chrono::duration<double, std::milli>(end - start).count();
+
+  std::cerr << "Generated map in " << elapsed << " ms\n";
 }
