@@ -59,6 +59,8 @@ class TerrainGenerator {
   NoiseGenerator coarse_humidity_noise_;
   NoiseGenerator medium_humidity_noise_;
 
+  bool generated_map_;
+
   size_t width_;
   size_t height_;
   std::vector<TerrainType_> map_;
@@ -69,6 +71,8 @@ class TerrainGenerator {
 
  public:
   explicit TerrainGenerator(std::uint32_t seed, size_t w, size_t h);
+
+  TerrainType_ sample_map(size_t x, size_t y) const;
 
   void generate_map();
 

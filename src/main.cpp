@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
   };
 
   std::uint32_t seed = 8675309;
-  std::size_t width = 2500;
-  std::size_t height = 2500;
+  size_t width = 2500;
+  size_t height = 2500;
 
   while ((option = getopt_long(argc, argv, "s:w:h:", long_opts, &option_index)) != -1) {
     switch (option) {
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
       case 'w':
         try {
-          width = static_cast<std::size_t>(std::stoull(std::string(optarg)));
+          width = static_cast<size_t>(std::stoull(std::string(optarg)));
         } catch (const std::invalid_argument& e) {
           std::cerr << "Invalid argument: Argument for 'width' could not be converted." << std::endl;
         }
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
       case 'h':
         try {
-          height = static_cast<std::size_t>(std::stoull(std::string(optarg)));
+          height = static_cast<size_t>(std::stoull(std::string(optarg)));
         } catch (const std::invalid_argument& e) {
           std::cerr << "Invalid argument: Argument for 'height' could not be converted." << std::endl;
         }
