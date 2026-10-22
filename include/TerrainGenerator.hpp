@@ -34,6 +34,13 @@ class TerrainGenerator {
   NoiseGenerator coarse_elevation_noise_;
   NoiseGenerator medium_elevation_noise_;
   NoiseGenerator fine_elevation_noise_;
+
+  NoiseGenerator mountain_region_noise_;
+  NoiseGenerator mountain_ridge_noise_;
+
+  NoiseGenerator mountain_warp_x_;
+  NoiseGenerator mountain_warp_y_;
+
   NoiseGenerator temperature_noise_;
   NoiseGenerator humidity_noise_;
 

@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <vector>
 
-NoiseGenerator::NoiseGenerator(std::uint32_t seed, float frequency) {
+NoiseGenerator::NoiseGenerator(std::uint32_t seed, float frequency,
+  FastNoiseLite::NoiseType noise_type = FastNoiseLite::NoiseType::NoiseType_Perlin) {
   this->noise_.SetSeed(static_cast<int>(seed));
-  this->noise_.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+  this->noise_.SetNoiseType(noise_type);
   this->noise_.SetFrequency(frequency);
 }
 

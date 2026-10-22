@@ -11,7 +11,7 @@ class NoiseGenerator {
   FastNoiseLite noise_;
 
  public:
-  explicit NoiseGenerator(std::uint32_t seed, float frequency);
+  explicit NoiseGenerator(std::uint32_t seed, float frequency, FastNoiseLite::NoiseType noise_type);
 
   float sample(size_t x, size_t y) const;
 
