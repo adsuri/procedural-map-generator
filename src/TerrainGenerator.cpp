@@ -16,10 +16,37 @@ TerrainGenerator::TerrainGenerator(std::uint32_t seed, size_t w, size_t h)
    mountain_ridge_noise_(util::generate_seed(seed, 4), 0.012f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    mountain_warp_x_(util::generate_seed(seed, 5), 0.006f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    mountain_warp_y_(util::generate_seed(seed, 6), 0.006f, FastNoiseLite::NoiseType::NoiseType_Perlin),
-   temperature_noise_(util::generate_seed(seed, 7), 0.01f, FastNoiseLite::NoiseType::NoiseType_Perlin),
-   humidity_noise_(util::generate_seed(seed, 8), 0.01f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   coarse_temperature_noise_(util::generate_seed(seed, 7), 0.001f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   medium_temperature_noise_(util::generate_seed(seed, 7), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   coarse_humidity_noise_(util::generate_seed(seed, 8), 0.001f, FastNoiseLite::NoiseType::NoiseType_Perlin),
+   medium_humidity_noise_(util::generate_seed(seed, 7), 0.025f, FastNoiseLite::NoiseType::NoiseType_Perlin),
    width_(w),
    height_(h) {}
+
+TerrainGenerator::TerrainType_ TerrainGenerator::choose_biome_(float temperature, float humidity) const {
+  if (temperature < -0.35f) {
+    if (humidity > 0.2f) {
+      return TerrainType_::TAIGA;
+    }
+    return TerrainType_::TUNDRA;
+  }
+
+  if (temperature > 0.35f) {
+    if (humidity < -0.2f) {
+      return TerrainType_::DESERT;
+    }
+    if (humidity > 0.3f) {
+      return TerrainType_::TROPICAL_FOREST;
+    }
+    return TerrainType_::SAVANNA;
+  }
+
+  if (humidity > 0.2f) {
+    return TerrainType_::FOREST;
+  }
+
+  return TerrainType_::PLAINS;
+}
 
 void TerrainGenerator::generate_map() {
   this->map_.reserve(this->width_ * this->height_);
@@ -54,8 +81,16 @@ void TerrainGenerator::generate_map() {
       
       if (is_mountain) {
         this->map_[idx] = TerrainType_::MOUNTAIN;
+
       } else if (elevation >= 0.2f) {
-        this->map_[idx] = TerrainType_::LAND;
+        float temperature = this->coarse_temperature_noise_.sample(x, y);
+        temperature += this->medium_temperature_noise_.sample(x, y) / 5.0f;
+
+        float humidity = this->coarse_humidity_noise_.sample(x, y);
+        humidity += this->medium_humidity_noise_.sample(x, y) / 5.0f;
+
+        this->map_[idx] = this->choose_biome_(temperature, humidity);
+
       } else if (elevation >= -0.10f) {
         this->map_[idx] = TerrainType_::WATER;
       } else {

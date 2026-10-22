@@ -20,15 +20,27 @@ class TerrainGenerator {
   enum class TerrainType_ : char {
     WATER,
     DEEP_WATER,
-    LAND,
-    MOUNTAIN
+    MOUNTAIN,
+    PLAINS,
+    DESERT,
+    FOREST,
+    TROPICAL_FOREST,
+    TAIGA,
+    TUNDRA,
+    SAVANNA
   };
 
   inline static const Color_ COLOR_MAP_[] = {
     {65, 130, 190}, // WATER
     {45, 100, 155}, // DEEP_WATER
-    {100, 175, 85}, // LAND
-    {135, 135, 135} // MOUNTAIN
+    {135, 135, 135}, // MOUNTAIN
+    {100, 175, 85}, // PLAINS
+    {220, 195, 105}, // DESERT
+    {45, 120, 55}, // FOREST
+    {25, 100, 45}, // TROPICAL_FOREST
+    {100, 125, 95}, // TAIGA
+    {190, 195, 200}, // TUNDRA
+    {190, 165, 80} // SAVANNA
   };
 
   NoiseGenerator coarse_elevation_noise_;
@@ -41,12 +53,17 @@ class TerrainGenerator {
   NoiseGenerator mountain_warp_x_;
   NoiseGenerator mountain_warp_y_;
 
-  NoiseGenerator temperature_noise_;
-  NoiseGenerator humidity_noise_;
+  NoiseGenerator coarse_temperature_noise_;
+  NoiseGenerator medium_temperature_noise_;
+
+  NoiseGenerator coarse_humidity_noise_;
+  NoiseGenerator medium_humidity_noise_;
 
   size_t width_;
   size_t height_;
   std::vector<TerrainType_> map_;
+
+  TerrainType_ choose_biome_(float temperature, float humidity) const;
 
   friend std::ostream &operator<<(std::ostream &os, TerrainType_ terrain);
 
