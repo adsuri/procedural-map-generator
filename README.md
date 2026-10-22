@@ -1,6 +1,6 @@
 # Procedural Map Generator
 
-A C++17 program that generates procedural terrain maps using layered noise functions. It assigns terrain types based on elevation, temperature, and humidity, producing maps with several different types of biomes.
+A program that generates procedural terrain maps using layered noise functions. It assigns terrain types based on elevation, temperature, and humidity, producing maps with several different types of biomes.
 
 ## Build and Run
 
